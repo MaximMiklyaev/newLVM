@@ -1,29 +1,29 @@
-#скачиваем Vagrantfile
+#СЃРєР°С‡РёРІР°РµРј Vagrantfile
 
 git clone https://github.com/MaximMiklyaev/newLVM.git
 
-#переходим в директорию
+#РїРµСЂРµС…РѕРґРёРј РІ РґРёСЂРµРєС‚РѕСЂРёСЋ
 
 cd /newLVM
 
-#запускаем образ
+#Р·Р°РїСѓСЃРєР°РµРј РѕР±СЂР°Р·
 
 vagrant up
 
-#Устанавка утилит в авторежиме
-#xvfdump(резервное копирование и восстановление файловой системы)
-#nano(консольный текстовый редактор)
+#РЈСЃС‚Р°РЅР°РІРєР° СѓС‚РёР»РёС‚ РІ Р°РІС‚РѕСЂРµР¶РёРјРµ
+#xvfdump(СЂРµР·РµСЂРІРЅРѕРµ РєРѕРїРёСЂРѕРІР°РЅРёРµ Рё РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹)
+#nano(РєРѕРЅСЃРѕР»СЊРЅС‹Р№ С‚РµРєСЃС‚РѕРІС‹Р№ СЂРµРґР°РєС‚РѕСЂ)
 sudo yum install -y xfsdump
 sudo yum install -y nano.x86_64
 
-#переход VM
+#РїРµСЂРµС…РѕРґ VM
 vagrant ssh
 
-#переходим под root права
+#РїРµСЂРµС…РѕРґРёРј РїРѕРґ root РїСЂР°РІР°
 sudo -i
-#выводит список всех блоков хранения информации
+#РІС‹РІРѕРґРёС‚ СЃРїРёСЃРѕРє РІСЃРµС… Р±Р»РѕРєРѕРІ С…СЂР°РЅРµРЅРёСЏ РёРЅС„РѕСЂРјР°С†РёРё
 lsblk
-       вывод:
+       РІС‹РІРѕРґ:
              NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
                sda                       8:0    0   40G  0 disk
                +-sda1                    8:1    0    1M  0 part
@@ -36,13 +36,13 @@ lsblk
                 sdd                       8:48   0    1G  0 disk
                 sde                       8:64   0    1G  0 disk
 
-#подготовка тома
+#РїРѕРґРіРѕС‚РѕРІРєР° С‚РѕРјР°
 pvcreate /dev/sdb
 vgcreate vg_root /dev/sdb
 lvcreate -n lv_root -l +100%FREE /dev/vg_root
-#создание файловой системы
+#СЃРѕР·РґР°РЅРёРµ С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹
 *mkfs.xfs /dev/vg_root/lv_root
-       вывод:
+       РІС‹РІРѕРґ:
              meta-data=/dev/vg_root/lv_root   isize=512    agcount=4, agsize=655104 blks
                       =                       sectsz=512   attr=2, projid32bit=1
                       =                       crc=1        finobt=0, sparse=0
@@ -53,46 +53,46 @@ lvcreate -n lv_root -l +100%FREE /dev/vg_root
                       =                       sectsz=512   sunit=0 blks, lazy-count=1
              realtime =none                   extsz=4096   blocks=0, rtextents=0
 
-#монтирование файловой системы
+#РјРѕРЅС‚РёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹
 mount /dev/vg_root/lv_root /mnt
-#копирование данных в 
+#РєРѕРїРёСЂРѕРІР°РЅРёРµ РґР°РЅРЅС‹С… РІ 
 xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
-#проверка скопированых файлов
+#РїСЂРѕРІРµСЂРєР° СЃРєРѕРїРёСЂРѕРІР°РЅС‹С… С„Р°Р№Р»РѕРІ
 ls /mnt
-        вывод:
+        РІС‹РІРѕРґ:
               bin   dev  home  lib64  mnt  proc  run   srv  tmp  vagrant
               boot  etc  lib   media  opt  root  sbin  sys  usr  var
-#эмитация текущий root 
+#СЌРјРёС‚Р°С†РёСЏ С‚РµРєСѓС‰РёР№ root 
 *for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
-#временная смена корня
+#РІСЂРµРјРµРЅРЅР°СЏ СЃРјРµРЅР° РєРѕСЂРЅСЏ
 *chroot /mnt/
-#обновляем grub
+#РѕР±РЅРѕРІР»СЏРµРј grub
 *grub2-mkconfig -o /boot/grub2/grub.cfg
-#обновление образа initrd
+#РѕР±РЅРѕРІР»РµРЅРёРµ РѕР±СЂР°Р·Р° initrd
 cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g; s/.img//g"` --force; done
 
-#для того что бы загрузился нужный root правим файл /boot/grub2/grub.cfg
+#РґР»СЏ С‚РѕРіРѕ С‡С‚Рѕ Р±С‹ Р·Р°РіСЂСѓР·РёР»СЃСЏ РЅСѓР¶РЅС‹Р№ root РїСЂР°РІРёРј С„Р°Р№Р» /boot/grub2/grub.cfg
 nano /boot/grub2/grub.cfg
-#Находим строку rd.lvm.lv=VolGroup00/LogVol00
-#и правим её на rd.lvm.lv=vg_root/lv_root
-    #нажимаем - ctrl+w
-     #вводим - rd.lvm - enter - находим - rd.lvm.lv=VolGroup00/LogVol00 правим на - rd.lvm.lv=vg_root/lv_root
-      #вводим - ctrl+x 
-       #вводим - y 
+#РќР°С…РѕРґРёРј СЃС‚СЂРѕРєСѓ rd.lvm.lv=VolGroup00/LogVol00
+#Рё РїСЂР°РІРёРј РµС‘ РЅР° rd.lvm.lv=vg_root/lv_root
+    #РЅР°Р¶РёРјР°РµРј - ctrl+w
+     #РІРІРѕРґРёРј - rd.lvm - enter - РЅР°С…РѕРґРёРј - rd.lvm.lv=VolGroup00/LogVol00 РїСЂР°РІРёРј РЅР° - rd.lvm.lv=vg_root/lv_root
+      #РІРІРѕРґРёРј - ctrl+x 
+       #РІРІРѕРґРёРј - y 
 
-#перезагружаем систему
+#РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃРёСЃС‚РµРјСѓ
 cd ..
 reboot
 
-#подколючаемся к VM
+#РїРѕРґРєРѕР»СЋС‡Р°РµРјСЃСЏ Рє VM
 vagrant ssh
 
-#переходим под root права
+#РїРµСЂРµС…РѕРґРёРј РїРѕРґ root РїСЂР°РІР°
 sudo -i
 
-#проверяем что система загрузилась с новым root томом
+#РїСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ СЃРёСЃС‚РµРјР° Р·Р°РіСЂСѓР·РёР»Р°СЃСЊ СЃ РЅРѕРІС‹Рј root С‚РѕРјРѕРј
 lsblk
-      вывод:
+      РІС‹РІРѕРґ:
 
             NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
              sda                       8:0    0   40G  0 disk
@@ -107,15 +107,15 @@ lsblk
                 sdd                       8:48   0    1G  0 disk
                 sde                       8:64   0    1G  0 disk
 
-#удаление старого тома 40gb 
+#СѓРґР°Р»РµРЅРёРµ СЃС‚Р°СЂРѕРіРѕ С‚РѕРјР° 40gb 
 lvremove /dev/VolGroup00/LogVol00
 
-#создание нового тома 8gb
+#СЃРѕР·РґР°РЅРёРµ РЅРѕРІРѕРіРѕ С‚РѕРјР° 8gb
 lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00
 
-#cоздаем файловую систему на томе созданом выше
+#cРѕР·РґР°РµРј С„Р°Р№Р»РѕРІСѓСЋ СЃРёСЃС‚РµРјСѓ РЅР° С‚РѕРјРµ СЃРѕР·РґР°РЅРѕРј РІС‹С€Рµ
 mkfs.xfs /dev/VolGroup00/LogVol00
-        вывод:
+        РІС‹РІРѕРґ:
               meta-data=/dev/VolGroup00/LogVol00 isize=512    agcount=4, agsize=524288 blks
                        =                       sectsz=512   attr=2, projid32bit=1
                        =                       crc=1        finobt=0, sparse=0
@@ -127,55 +127,55 @@ mkfs.xfs /dev/VolGroup00/LogVol00
               realtime =none                   extsz=4096   blocks=0, rtextents=0
 
 
-#монтируем том
+#РјРѕРЅС‚РёСЂСѓРµРј С‚РѕРј
 mount /dev/VolGroup00/LogVol00 /mnt
 
-#копируем все данные с / раздела в /mnt
+#РєРѕРїРёСЂСѓРµРј РІСЃРµ РґР°РЅРЅС‹Рµ СЃ / СЂР°Р·РґРµР»Р° РІ /mnt
 xfsdump -J - /dev/vg_root/lv_root | xfsrestore -J - /mnt
 
-#снова переконфигурируем grub
+#СЃРЅРѕРІР° РїРµСЂРµРєРѕРЅС„РёРіСѓСЂРёСЂСѓРµРј grub
 for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
 chroot /mnt/
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
-#обновим образ initrd
+#РѕР±РЅРѕРІРёРј РѕР±СЂР°Р· initrd
 cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g; *s/.img//g"` --force; done
 
-#не выходя из chroot и не перезагружаясь выделим том под /var
-#подготавливаем свободные диски,создаем зеркало
-#создание зеркала
+#РЅРµ РІС‹С…РѕРґСЏ РёР· chroot Рё РЅРµ РїРµСЂРµР·Р°РіСЂСѓР¶Р°СЏСЃСЊ РІС‹РґРµР»РёРј С‚РѕРј РїРѕРґ /var
+#РїРѕРґРіРѕС‚Р°РІР»РёРІР°РµРј СЃРІРѕР±РѕРґРЅС‹Рµ РґРёСЃРєРё,СЃРѕР·РґР°РµРј Р·РµСЂРєР°Р»Рѕ
+#СЃРѕР·РґР°РЅРёРµ Р·РµСЂРєР°Р»Р°
 pvcreate /dev/sdc /dev/sdd
 vgcreate vg_var /dev/sdc /dev/sdd
 lvcreate -L 950M -m1 -n lv_var vg_var
 
-#создаем файловую систему и перемещаем туда /var
+#СЃРѕР·РґР°РµРј С„Р°Р№Р»РѕРІСѓСЋ СЃРёСЃС‚РµРјСѓ Рё РїРµСЂРµРјРµС‰Р°РµРј С‚СѓРґР° /var
 mkfs.ext4 /dev/vg_var/lv_var
 mount /dev/vg_var/lv_var /mnt
 cp -aR /var/* /mnt/ # rsync -avHPSAX /var/ /mnt/
 
-#сохраняем данные старого /var
+#СЃРѕС…СЂР°РЅСЏРµРј РґР°РЅРЅС‹Рµ СЃС‚Р°СЂРѕРіРѕ /var
 mkdir /tmp/oldvar && mv /var/* /tmp/oldvar
 
-#монтируем новyй var в каталог /var
+#РјРѕРЅС‚РёСЂСѓРµРј РЅРѕРІyР№ var РІ РєР°С‚Р°Р»РѕРі /var
 umount /mnt
 mount /dev/vg_var/lv_var /var
 
-#правим fstab для автоматического монтирование /var
+#РїСЂР°РІРёРј fstab РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РјРѕРЅС‚РёСЂРѕРІР°РЅРёРµ /var
 echo "`blkid | grep var: | awk '{print $2}'` /var ext4 defaults 0 0" >> /etc/fstab
 
-#перезагружаем систему
-#вводим Ctrl+D для выхода из пользователя root
+#РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃРёСЃС‚РµРјСѓ
+#РІРІРѕРґРёРј Ctrl+D РґР»СЏ РІС‹С…РѕРґР° РёР· РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ root
 reboot
 
-#подколючаемся к VM
+#РїРѕРґРєРѕР»СЋС‡Р°РµРјСЃСЏ Рє VM
 vagrant ssh
 
-#переходим под root права
+#РїРµСЂРµС…РѕРґРёРј РїРѕРґ root РїСЂР°РІР°
 sudo -i
 
-#Проверяем что система загрузилась с новым root томом на 8gb
+#РџСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ СЃРёСЃС‚РµРјР° Р·Р°РіСЂСѓР·РёР»Р°СЃСЊ СЃ РЅРѕРІС‹Рј root С‚РѕРјРѕРј РЅР° 8gb
 lsblk
-      вывод:
+      РІС‹РІРѕРґ:
             NAME                     MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
             sda                        8:0    0   40G  0 disk
              +-sda1                     8:1    0    1M  0 part
@@ -187,26 +187,26 @@ lsblk
                 L-vg_root-lv_root        253:7    0   10G  0 lvm
                sdc                        8:32   0    2G  0 disk
                 +-vg_var-lv_var_rmeta_0  253:2    0    4M  0 lvm
-                ¦ L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
+                В¦ L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
                 L-vg_var-lv_var_rimage_0 253:3    0  952M  0 lvm
                   L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
                sdd                        8:48   0    1G  0 disk
                 +-vg_var-lv_var_rmeta_1  253:4    0    4M  0 lvm
-                ¦ L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
+                В¦ L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
                 L-vg_var-lv_var_rimage_1 253:5    0  952M  0 lvm
                   L-vg_var-lv_var        253:6    0  952M  0 lvm  /var
                sde                        8:64   0    1G  0 disk
 
 
-#eдаление временного Volume Group
+#eРґР°Р»РµРЅРёРµ РІСЂРµРјРµРЅРЅРѕРіРѕ Volume Group
 lvremove /dev/vg_root/lv_root
 vgremove /dev/vg_root
 pvremove /dev/sdb
 
-#выделение тома под /home
+#РІС‹РґРµР»РµРЅРёРµ С‚РѕРјР° РїРѕРґ /home
 lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
 
-#создание файловой системы и перемещаем туда /home
+#СЃРѕР·РґР°РЅРёРµ С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹ Рё РїРµСЂРµРјРµС‰Р°РµРј С‚СѓРґР° /home
 mkfs.xfs /dev/VolGroup00/LogVol_Home
 mount /dev/VolGroup00/LogVol_Home /mnt/
 cp -aR /home/* /mnt/
@@ -214,48 +214,48 @@ rm -rf /home/*
 umount /mnt
 mount /dev/VolGroup00/LogVol_Home /home/
 
-#изменяем fstab для автоматического монтирование /home
+#РёР·РјРµРЅСЏРµРј fstab РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РјРѕРЅС‚РёСЂРѕРІР°РЅРёРµ /home
 echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
 
-#делаем том для снапшотов
-#сгенерируем файлы в home
+#РґРµР»Р°РµРј С‚РѕРј РґР»СЏ СЃРЅР°РїС€РѕС‚РѕРІ
+#СЃРіРµРЅРµСЂРёСЂСѓРµРј С„Р°Р№Р»С‹ РІ home
 touch /home/file{1..20}
 
-#проверим сгенерировались файлы
+#РїСЂРѕРІРµСЂРёРј СЃРіРµРЅРµСЂРёСЂРѕРІР°Р»РёСЃСЊ С„Р°Р№Р»С‹
 ls /home/
-    вывод:
+    РІС‹РІРѕРґ:
           file1   file11  file13  file15  file17  file19  file20  file4  file6  file8  vagrant
           file10  file12  file14  file16  file18  file2   file3   file5  file7  file9
 
  
-#снимаем снапшот
+#СЃРЅРёРјР°РµРј СЃРЅР°РїС€РѕС‚
 lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
 
-#удаляем часть файлов в /home и убедимся в этом
+#СѓРґР°Р»СЏРµРј С‡Р°СЃС‚СЊ С„Р°Р№Р»РѕРІ РІ /home Рё СѓР±РµРґРёРјСЃСЏ РІ СЌС‚РѕРј
 rm -f /home/file{11..20}
 ls /home/
-    вывод:
+    РІС‹РІРѕРґ:
           file1  file10  file2  file3  file4  file5  file6  file7  file8  file9  vagrant
 
-#восстанавливаем /home со снапшота
+#РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј /home СЃРѕ СЃРЅР°РїС€РѕС‚Р°
 umount /home
 lvconvert --merge /dev/VolGroup00/home_snap
-      вывод:
+      РІС‹РІРѕРґ:
            Merging of volume VolGroup00/home_snap started.
            VolGroup00/LogVol_Home: Merged: 100.00%
 
 mount /home
 
-#проверим восстановились ли файлы
+#РїСЂРѕРІРµСЂРёРј РІРѕСЃСЃС‚Р°РЅРѕРІРёР»РёСЃСЊ Р»Рё С„Р°Р№Р»С‹
 ls /home/
-      вывод:
+      РІС‹РІРѕРґ:
             file1   file11  file13  file15  file17  file19  file20  file4  file6  file8  vagrant
             file10  file12  file14  file16  file18  file2   file3   file5  file7  file9
 
 
-#проверим прописалось ли монтирование в fstab (Должны увидеть /home и /var с разными файловыми системами)
+#РїСЂРѕРІРµСЂРёРј РїСЂРѕРїРёСЃР°Р»РѕСЃСЊ Р»Рё РјРѕРЅС‚РёСЂРѕРІР°РЅРёРµ РІ fstab (Р”РѕР»Р¶РЅС‹ СѓРІРёРґРµС‚СЊ /home Рё /var СЃ СЂР°Р·РЅС‹РјРё С„Р°Р№Р»РѕРІС‹РјРё СЃРёСЃС‚РµРјР°РјРё)
 cat /etc/fstab
-      вывод:
+      РІС‹РІРѕРґ:
             #
             # /etc/fstab
             # Created by anaconda on Sat May 12 18:50:26 2018
